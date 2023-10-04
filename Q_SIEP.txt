@@ -1,0 +1,82 @@
+from qiskit import QuantumCircuit, Aer, execute
+from qiskit.visualization import plot_histogram
+import numpy as np
+import matplotlib.pyplot as plt
+import hashlib
+
+# Define Q-SIEP parameters
+n = int(input("Enter the number of qubits: "))  # Number of qubits
+alice_bases = np.random.randint(2, size=n)  # Alice's random bases
+alice_bits = np.random.randint(2, size=n)   # Alice's random bits
+bob_bases = alice_bases    # Alice and Bob share bases over public channel
+# Step 1: Alice prepares qubits in Bell states and sends one qubit to Bob
+circuit = QuantumCircuit(n, n)
+for i in range(n):
+    if alice_bases[i] == 0:
+        circuit.h(i)
+    else:
+        circuit.ry(np.pi/4, i)  # Apply a rotation gate for diagonal basis
+    if alice_bits[i] == 1:
+        circuit.x(i)
+circuit.barrier()
+
+for i in range(n):
+    if alice_bases[i] == 0:
+        circuit.cx(i, (i + 1) % n)
+circuit.barrier()
+# Step 2: Bob measures qubits
+for i in range(n):
+    if bob_bases[i] == 0:
+        circuit.h(i)
+    else:
+        circuit.ry(-np.pi/4, i)  # Apply the inverse rotation gate
+    circuit.measure(i, i)
+
+# Step 3: Simulate the quantum circuit
+simulator = Aer.get_backend('qasm_simulator')
+result = execute(circuit, simulator, shots=100).result()
+counts = result.get_counts()
+bob_bits = [int(k) for k in list(counts.keys())[0]]
+print(alice_bits,bob_bits)
+# Step 4: Alice and Bob confirm matching bases and indices for key bits also calculate the key based on matching bits
+shared_key = []
+
+for i in range(len(alice_bits)):
+	if alice_bases[i] == bob_bases[i]:
+		if bob_bits[i]==alice_bits[i]:
+			shared_key.append(bob_bits[i])
+print("Shared Key: ",shared_key)
+# Step 6: Eavesdropping Detection (Bell tests)
+bell_test_results = []
+
+# Perform Bell test
+count_00 = counts.get('0' * n, 0)
+count_11 = counts.get('1' * n, 0)
+count_01 = counts.get('0' * (n - 1) + '1', 0)
+count_10 = counts.get('1' + '0' * (n - 1), 0)
+bell_test_value = (count_00 + count_11 - count_01 - count_10) / 100
+for i in range(n):
+    bell_test_results.append(alice_bases[i] == bob_bases[i])
+if all(bell_test_results):
+    print("No eavesdropping detected.")
+    print("Bell test value: ",bell_test_value)
+else:
+    print("Eavesdropping detected. Abort the protocol.")
+
+# Step 7: Optional Key Extraction (Error correction and Privacy amplification)
+# Error correction (Example: Parity-check code)
+parity = sum(shared_key) % 2
+alice_key = np.concatenate((shared_key, [parity]))
+corrected_key = [bob_bits[i] for i in shared_key]
+corrected_key_str = ''.join(map(str, corrected_key))
+# Privacy amplification using SHA-256
+hashed_key = hashlib.sha256(corrected_key_str.encode()).hexdigest()
+
+# Step 8: Display the final shared key
+print("Final Shared Key (After Error Correction and Privacy Amplification):", hashed_key)
+# Plot the histogram
+plt.bar(counts.keys(), counts.values())
+plt.xlabel('Measured Bits')
+plt.ylabel('Counts')
+plt.title('Measurement Results')
+plt.show()
