@@ -46,7 +46,7 @@ for i in range(len(alice_bits)):
 		if bob_bits[i]==alice_bits[i]:
 			shared_key.append(bob_bits[i])
 print("Shared Key: ",shared_key)
-# Step 6: Eavesdropping Detection (Bell tests)
+# Step 5: Eavesdropping Detection (Bell tests)
 bell_test_results = []
 
 # Perform Bell test
@@ -63,7 +63,7 @@ if all(bell_test_results):
 else:
     print("Eavesdropping detected. Abort the protocol.")
 
-# Step 7: Optional Key Extraction (Error correction and Privacy amplification)
+# Step 6: Optional Key Extraction (Error correction and Privacy amplification)
 # Error correction (Example: Parity-check code)
 parity = sum(shared_key) % 2
 alice_key = np.concatenate((shared_key, [parity]))
@@ -72,7 +72,7 @@ corrected_key_str = ''.join(map(str, corrected_key))
 # Privacy amplification using SHA-256
 hashed_key = hashlib.sha256(corrected_key_str.encode()).hexdigest()
 
-# Step 8: Display the final shared key
+# Step 7: Display the final shared key
 print("Final Shared Key (After Error Correction and Privacy Amplification):", hashed_key)
 # Plot the histogram
 plt.bar(counts.keys(), counts.values())
