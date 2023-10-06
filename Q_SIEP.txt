@@ -37,7 +37,8 @@ simulator = Aer.get_backend('qasm_simulator')
 result = execute(circuit, simulator, shots=100).result()
 counts = result.get_counts()
 bob_bits = [int(k) for k in list(counts.keys())[0]]
-print(alice_bits,bob_bits)
+print("AICE BITS: ",alice_bits)
+print("BOB BITS: ",bob_bits)
 # Step 4: Alice and Bob confirm matching bases and indices for key bits also calculate the key based on matching bits
 shared_key = []
 
@@ -57,7 +58,7 @@ count_10 = counts.get('1' + '0' * (n - 1), 0)
 bell_test_value = (count_00 + count_11 - count_01 - count_10) / 100
 for i in range(n):
     bell_test_results.append(alice_bases[i] == bob_bases[i])
-if all(bell_test_results):
+if all(bell_test_results) and bell_test_value >0.85:
     print("No eavesdropping detected.")
     print("Bell test value: ",bell_test_value)
 else:
